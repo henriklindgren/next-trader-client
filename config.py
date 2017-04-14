@@ -5,21 +5,27 @@ from exceptions import ConfigurationNotFound
 import logging
 log = logging.getLogger(__name__)
 
+USERNAME = 'username'
+PASSWORD = 'password'
+SERVICE = 'service'
+URL = 'url'
+API_VERSION = 'api_version'
+
 DEFAULT_CONFIG_PATH = 'conf.ini'
 DEFAULT_CONFIG_NAME = 'CONFIG'
 DEFAULT_CONFIG = {DEFAULT_CONFIG_NAME:
-                      {'username':'username',
-                       'password':'password',
-                       'service':'NEXTAPI',
-                       'url':'api.test.nordnet.se',
-                       'api_version':'2'
+                      {USERNAME:'username',
+                       PASSWORD:'password',
+                       SERVICE:'NEXTAPI',
+                       URL:'api.test.nordnet.se',
+                       API_VERSION:'2'
                        }
                   }
 
 
 class Config():
     def __init__(self):
-        self.parser = configparser.ConfigParser()
+        self.parser = configparser.RawConfigParser()
     def _set_field(self, field):
         try:
             setattr(self, field, self.parser[DEFAULT_CONFIG_NAME][field])
@@ -48,8 +54,8 @@ class Config():
                 error_message = 'Could not find exception at %s'
                 log.error(error_message, path)
                 raise ConfigurationNotFound(error_message % path)
-        self._set_field('username')
-        self._set_field('password')
-        self._set_field('service')
-        self._set_field('url')
-        self._set_field('api_version')
+        self._set_field(USERNAME)
+        self._set_field(PASSWORD)
+        self._set_field(SERVICE)
+        self._set_field(URL)
+        self._set_field(API_VERSION)
