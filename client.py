@@ -2,7 +2,7 @@ import time
 import base64
 import json
 import requests
-from Cryptodome.Cipher import PKCS1_OAEP
+from Cryptodome.Cipher import PKCS1_v1_5
 from Cryptodome.PublicKey import RSA
 
 from config import SERVICE
@@ -11,6 +11,7 @@ import logging
 log = logging.getLogger(__name__)
 
 AUTH = 'auth'
+ENCODING = 'utf-8'
 
 class NextClient():
     def __init__(self, username, password, url, service, api_version):
@@ -19,15 +20,13 @@ class NextClient():
         self.url = 'https://' + url
         self.service = service
         self.api_version = api_version
-        self.headers = {"Accept": "application/json"}
+        self.headers = {'Accept': 'application/json', 'Accept-Language': 'en'}
         self.time_of_last_communication = None
         """Keeps track of when we talked to the server the last time for 
         timeout purposes"""
 
     def build_timestamp(self, t):
-        timestamp = int(round(t * 1000))
-        timestamp = str(timestamp)
-        return timestamp
+        return str(round(t * 1000))
 
     def is_next_up(self):
         try:
@@ -43,13 +42,14 @@ class NextClient():
         :type s: str
         :return: base64 as string
         """
-        encoding = 'utf-8'
-        return base64.b64encode(s.encode(encoding)).decode(encoding)
+        return base64.b64encode(s.encode(ENCODING)).decode(ENCODING)
 
     def login(self, logout=False):
         """
         :param logout: if True then logging out. 
         """
+        # Server reports back GMT time, but it seems to work without adjusting
+        # local time from Sweden.
         timestamp = self.build_timestamp(time.time())
         encoded_username = self.encode_str_to_base64(self.username)
         encoded_timestamp = self.encode_str_to_base64(timestamp)
@@ -58,10 +58,9 @@ class NextClient():
                       encoded_timestamp
         with open('NEXTAPI_TEST_public.pem', 'r') as next_pub_key:
             rsa_key = RSA.import_key(next_pub_key.read())
-        cipher_rsa = PKCS1_OAEP.new(rsa_key)
-        encrypted_hash = cipher_rsa.encrypt(session_key.encode('utf-8'))
-        hash = base64.b64encode(encrypted_hash)
-
+        cipher_rsa = PKCS1_v1_5.new(rsa_key)
+        encrypted_hash = cipher_rsa.encrypt(session_key.encode(ENCODING))
+        hash = base64.b64encode(encrypted_hash).decode(ENCODING)
         data = {SERVICE: self.service, AUTH: hash}
         if logout:
             r = requests.delete(self.url + '/next/' + self.api_version + '/' +
@@ -69,15 +68,12 @@ class NextClient():
         else:
             r = requests.post(self.url + '/next/' + self.api_version + '/' +
                               'login', data=data, headers=self.headers)
-        print(r.status_code, r.text)
         if r.status_code == 200:
             j = json.loads(r.text)
             print(json.dumps(j))
-        elif r.status_code == 401:
-            j = json.loads(r.text)
-            raise Exception(j['code'] + ':'+ j['message'])
         else:
-            raise Exception('login/logout failed')
+            j = json.loads(r.text)
+            raise Exception(j.get('code', '') + ':' + j.get('message', ''))
 
     def logout(self):
         self.login(logout=True)
