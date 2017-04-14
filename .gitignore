@@ -90,3 +90,9 @@ ENV/
 
 # Pycharm project settings
 .idea
+
+# next-trader-client stuff
+conf.ini
+
+# Nordnet stuff
+NEXTAPI_TEST_public.pem
