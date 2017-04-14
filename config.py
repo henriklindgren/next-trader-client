@@ -23,7 +23,7 @@ DEFAULT_CONFIG = {DEFAULT_CONFIG_NAME:
                   }
 
 
-class Config():
+class NextConfig():
     def __init__(self):
         self.parser = configparser.RawConfigParser()
     def _set_field(self, field):
