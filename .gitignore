@@ -96,3 +96,7 @@ conf.ini
 
 # Nordnet stuff
 NEXTAPI_TEST_public.pem
+
+# Swagger code-gen client
+swagger-codegen*.jar
+next_trader/
