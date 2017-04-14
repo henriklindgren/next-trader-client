@@ -1,17 +1,20 @@
-from auth import build_auth
+from auth import build_auth, build_basic_auth
 from config import NextConfig
-from next_trader.next_trader import DefaultApi, ApiClient
+from next_trader.next_trader import DefaultApi
 
-def print_me(s):
-    print(s)
 
 def swagger(config):
-    api = DefaultApi(api_client=ApiClient(
-        header_name='Content-Type',
-        header_value='application/x-www-form-urlencoded'))
+    api = DefaultApi()
     auth = build_auth(config)
-    api.login(auth=auth, service=config.service, callback=print_me)
-    # api.logout() # throws error, might be because of content type quick fix.
+    # content type hack because of how swagger generates json-defaults for POST.
+    api.api_client.default_headers = \
+        {'Content-Type':'application/x-www-form-urlencoded'}
+    login = api.login(auth=auth, service=config.service)
+    print(repr(login))
+    api.api_client.default_headers = {}
+    basic_auth = build_basic_auth(login.session_key)
+    login_status = api.logout(authorization=basic_auth)
+    print(repr(login_status))
 
 if __name__ == '__main__':
     config = NextConfig()
